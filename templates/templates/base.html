@@ -6,10 +6,13 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>{% block title %}GS Student Nursing Center by Golam Sarowar Sir - Mathematics & Science Coaching Center{% endblock %}</title>
+    <title>{% block title %}মাদ্রাসা উম্মুল কুরা - ইসলামিক শিক্ষা প্রতিষ্ঠান{% endblock %}</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Alpine.js - loaded before page content -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -160,18 +163,18 @@
 </head>
 <body class="bg-gray-50 min-h-screen">
     <!-- Navigation Bar -->
-    <nav class="bg-gradient-to-r from-blue-600 to-blue-700 shadow-lg border-b border-blue-800 fixed w-full top-0 z-50">
+    <nav class="bg-gradient-to-r from-green-600 to-green-700 shadow-lg border-b border-green-800 fixed w-full top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
                     <!-- Logo -->
                     <div class="flex-shrink-0 flex items-center">
-                        <i class="fas fa-graduation-cap text-2xl text-white mr-2"></i>
-                        <span class="text-xl font-bold text-white">GS Student Nursing Center</span>
+                        <i class="fas fa-mosque text-2xl text-white mr-2"></i>
+                        <span class="text-xl font-bold text-white">মাদ্রাসা উম্মুল কুরা</span>
                     </div>
                     
                     <!-- Mobile menu button -->
-                    <button type="button" class="ml-4 md:hidden inline-flex items-center justify-center p-2 rounded-md text-blue-200 hover:text-white hover:bg-blue-600" id="mobile-menu-btn">
+                    <button type="button" class="ml-4 md:hidden inline-flex items-center justify-center p-2 rounded-md text-green-200 hover:text-white hover:bg-green-600" id="mobile-menu-btn">
                         <i class="fas fa-bars"></i>
                     </button>
                 </div>
@@ -181,31 +184,31 @@
                     {% if user %}
                         <!-- User menu -->
                         <div class="relative" id="user-menu">
-                            <button type="button" class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" id="user-menu-btn">
+                            <button type="button" class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500" id="user-menu-btn">
                                 <div class="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                                    <span class="text-blue-600 text-sm font-medium">{{ user.firstName[0].upper() }}</span>
+                                    <span class="text-green-600 text-sm font-medium">{{ user.firstName[0].upper() }}</span>
                                 </div>
                                 <span class="ml-2 text-white">{{ user.name }}</span>
-                                <i class="fas fa-chevron-down ml-1 text-blue-200"></i>
+                                <i class="fas fa-chevron-down ml-1 text-green-200"></i>
                             </button>
                             
                             <!-- User dropdown menu -->
                             <div class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50" id="user-dropdown">
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <i class="fas fa-user mr-2"></i>Profile
+                                    <i class="fas fa-user mr-2"></i>প্রোফাইল
                                 </a>
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <i class="fas fa-cog mr-2"></i>Settings
+                                    <i class="fas fa-cog mr-2"></i>সেটিংস
                                 </a>
                                 <div class="border-t border-gray-100"></div>
                                 <button onclick="logout()" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                                    <i class="fas fa-sign-out-alt mr-2"></i>লগআউট
                                 </button>
                             </div>
                         </div>
                     {% else %}
-                        <a href="{{ url_for('templates.login_page') }}" class="bg-white text-blue-600 px-6 py-2 rounded-lg font-semibold hover:bg-blue-50 transition-all duration-300 shadow-lg">
-                            <i class="fas fa-sign-in-alt mr-2"></i>Login
+                        <a href="{{ url_for('templates.login_page') }}" class="bg-white text-green-600 px-6 py-2 rounded-lg font-semibold hover:bg-green-50 transition-all duration-300 shadow-lg">
+                            <i class="fas fa-sign-in-alt mr-2"></i>লগইন
                         </a>
                     {% endif %}
                 </div>
@@ -214,26 +217,26 @@
         
         <!-- Mobile menu -->
         <div class="hidden md:hidden" id="mobile-menu">
-            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-blue-700 border-t border-blue-800">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-green-700 border-t border-green-800">
                 {% if user %}
                     <div class="flex items-center px-3 py-2">
                         <div class="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                            <span class="text-blue-600 text-sm font-medium">{{ user.firstName[0].upper() }}</span>
+                            <span class="text-green-600 text-sm font-medium">{{ user.firstName[0].upper() }}</span>
                         </div>
                         <span class="ml-3 text-white">{{ user.name }}</span>
                     </div>
-                    <a href="#" class="block px-3 py-2 text-base font-medium text-white hover:text-blue-200 hover:bg-blue-600">
-                        <i class="fas fa-user mr-2"></i>Profile
+                    <a href="#" class="block px-3 py-2 text-base font-medium text-white hover:text-green-200 hover:bg-green-600">
+                        <i class="fas fa-user mr-2"></i>প্রোফাইল
                     </a>
-                    <a href="#" class="block px-3 py-2 text-base font-medium text-white hover:text-blue-200 hover:bg-blue-600">
-                        <i class="fas fa-cog mr-2"></i>Settings
+                    <a href="#" class="block px-3 py-2 text-base font-medium text-white hover:text-green-200 hover:bg-green-600">
+                        <i class="fas fa-cog mr-2"></i>সেটিংস
                     </a>
-                    <button onclick="logout()" class="block w-full text-left px-3 py-2 text-base font-medium text-white hover:text-blue-200 hover:bg-blue-600">
-                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                    <button onclick="logout()" class="block w-full text-left px-3 py-2 text-base font-medium text-white hover:text-green-200 hover:bg-green-600">
+                        <i class="fas fa-sign-out-alt mr-2"></i>লগআউট
                     </button>
                 {% else %}
-                    <a href="{{ url_for('templates.login_page') }}" class="block px-3 py-2 text-base font-medium text-white hover:text-blue-200 hover:bg-blue-600">
-                        <i class="fas fa-sign-in-alt mr-2"></i>Login
+                    <a href="{{ url_for('templates.login_page') }}" class="block px-3 py-2 text-base font-medium text-white hover:text-green-200 hover:bg-green-600">
+                        <i class="fas fa-sign-in-alt mr-2"></i>লগইন
                     </a>
                 {% endif %}
             </div>

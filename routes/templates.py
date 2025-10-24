@@ -18,6 +18,8 @@ def index():
                 return render_template('dashboard_student_new.html', user=session['user'])
             elif user_role == 'teacher':
                 return render_template('dashboard_teacher.html', user=session['user'])
+            elif user_role == 'junior_ustadh':
+                return render_template('dashboard_junior_ustad.html', user=session['user'])
             elif user_role == 'super_user':
                 # Super users get their own dashboard
                 return render_template('dashboard_super_admin_simple.html', user=session['user'])
@@ -88,3 +90,44 @@ def super_dashboard():
         return redirect(url_for('templates.index'))
     
     return render_template('dashboard_super_admin_simple.html', user=session['user'])
+
+@templates_bp.route('/junior-ustadh')
+def junior_ustadh_dashboard():
+    """Junior ustadh (assistant teacher) dashboard direct route"""
+    if 'user' not in session:
+        return redirect(url_for('templates.login_page'))
+    
+    user_role = session['user'].get('role')
+    if user_role != 'junior_ustadh':
+        return redirect(url_for('templates.index'))
+    
+    return render_template('dashboard_junior_ustad.html', user=session['user'])
+
+@templates_bp.route('/junior-ustad-management')
+def junior_ustad_management():
+    """Junior ustadh management page (admin and senior teachers)"""
+    if 'user' not in session:
+        return redirect(url_for('templates.login_page'))
+    
+    user_role = session['user'].get('role')
+    if user_role not in ['super_user', 'teacher']:
+        return redirect(url_for('templates.index'))
+    
+    return render_template('junior_ustad_management.html', user=session['user'])
+
+@templates_bp.route('/test-junior-ustad')
+def test_junior_ustad():
+    """Test page for junior ustad API"""
+    return render_template('test_junior_ustad.html')
+
+@templates_bp.route('/junior-ustad-simple')
+def junior_ustad_simple():
+    """Simple version of junior ustad management (no Alpine.js)"""
+    if 'user' not in session:
+        return redirect(url_for('templates.login_page'))
+    
+    user_role = session['user'].get('role')
+    if user_role not in ['super_user', 'teacher']:
+        return redirect(url_for('templates.index'))
+    
+    return render_template('junior_ustad_simple.html', user=session['user'])

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Junior Ustad Creation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-2xl mx-auto">
+        <h1 class="text-2xl font-bold mb-4">Test Junior Ustad API</h1>
+        
+        <div class="bg-white rounded-lg shadow p-6 mb-4">
+            <h2 class="text-lg font-bold mb-4">1. Login as Teacher</h2>
+            <button onclick="loginAsTeacher()" class="bg-blue-500 text-white px-4 py-2 rounded">
+                Login as Teacher
+            </button>
+            <div id="login-result" class="mt-2 text-sm"></div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6 mb-4">
+            <h2 class="text-lg font-bold mb-4">2. Create Junior Ustad</h2>
+            <form onsubmit="createJuniorUstad(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">First Name</label>
+                    <input type="text" id="first_name" value="টেস্ট" class="w-full border rounded px-3 py-2" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Last Name</label>
+                    <input type="text" id="last_name" value="উস্তাদ" class="w-full border rounded px-3 py-2" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Phone</label>
+                    <input type="tel" id="phone" value="01555555555" class="w-full border rounded px-3 py-2" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Password</label>
+                    <input type="password" id="password" value="test123" class="w-full border rounded px-3 py-2" required>
+                </div>
+                <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded">
+                    Create Junior Ustad
+                </button>
+            </form>
+            <div id="create-result" class="mt-4 text-sm"></div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-bold mb-4">3. View Junior Ustads</h2>
+            <button onclick="loadJuniorUstads()" class="bg-purple-500 text-white px-4 py-2 rounded">
+                Load List
+            </button>
+            <div id="list-result" class="mt-4"></div>
+        </div>
+    </div>
+    
+    <script>
+        async function loginAsTeacher() {
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        phoneNumber: '01812345678',
+                        password: 'teacher123'
+                    })
+                });
+                
+                const data = await response.json();
+                const resultDiv = document.getElementById('login-result');
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `<div class="text-green-600">✅ Logged in as: ${data.data.user.name} (${data.data.user.role})</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="text-red-600">❌ Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('login-result').innerHTML = `<div class="text-red-600">❌ Exception: ${error.message}</div>`;
+            }
+        }
+        
+        async function createJuniorUstad(event) {
+            event.preventDefault();
+            
+            const formData = {
+                first_name: document.getElementById('first_name').value,
+                last_name: document.getElementById('last_name').value,
+                phone: document.getElementById('phone').value,
+                password: document.getElementById('password').value
+            };
+            
+            try {
+                const response = await fetch('/api/junior-ustad/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                const resultDiv = document.getElementById('create-result');
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `<div class="text-green-600">✅ Created: ${data.data.name} (${data.data.phone})</div>`;
+                    // Auto load the list
+                    loadJuniorUstads();
+                } else {
+                    resultDiv.innerHTML = `<div class="text-red-600">❌ Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('create-result').innerHTML = `<div class="text-red-600">❌ Exception: ${error.message}</div>`;
+            }
+        }
+        
+        async function loadJuniorUstads() {
+            try {
+                const response = await fetch('/api/junior-ustad/');
+                const data = await response.json();
+                const resultDiv = document.getElementById('list-result');
+                
+                if (data.success) {
+                    const list = data.data.junior_ustads.map(ju => 
+                        `<div class="border-b py-2">
+                            <strong>${ju.name}</strong> - ${ju.phone}
+                            <span class="text-xs ${ju.is_active ? 'text-green-600' : 'text-red-600'}">
+                                (${ju.is_active ? 'Active' : 'Inactive'})
+                            </span>
+                        </div>`
+                    ).join('');
+                    
+                    resultDiv.innerHTML = `<div class="mt-2">${list || '<p class="text-gray-500">No junior ustads found</p>'}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="text-red-600">❌ Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('list-result').innerHTML = `<div class="text-red-600">❌ Exception: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

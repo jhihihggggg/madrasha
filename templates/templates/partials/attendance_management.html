@@ -170,9 +170,9 @@
                                     <!-- Status Badge -->
                                     <div class="flex-shrink-0">
                                         <span 
-                                            :class="student.status === 'present' ? 'bg-green-100 text-green-800 border-green-200' : 'bg-red-100 text-red-800 border-red-200'"
+                                            :class="student.attendance_status === 'present' ? 'bg-green-100 text-green-800 border-green-200' : 'bg-red-100 text-red-800 border-red-200'"
                                             class="inline-flex px-3 py-1 text-xs font-semibold rounded-full border"
-                                            x-text="student.status === 'present' ? 'Present' : 'Absent'"
+                                            x-text="student.attendance_status === 'present' ? 'Present' : 'Absent'"
                                         ></span>
                                     </div>
                                 </div>
@@ -181,7 +181,7 @@
                                 <div class="flex space-x-3">
                                     <button 
                                         @click="markAttendance(student, 'present')"
-                                        :class="student.status === 'present' ? 'bg-green-600 text-white shadow-lg' : 'bg-gray-100 text-gray-700 hover:bg-green-50 hover:text-green-700'"
+                                        :class="student.attendance_status === 'present' ? 'bg-green-600 text-white shadow-lg' : 'bg-gray-100 text-gray-700 hover:bg-green-50 hover:text-green-700'"
                                         class="flex-1 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 border"
                                         :disabled="saving"
                                     >
@@ -189,7 +189,7 @@
                                     </button>
                                     <button 
                                         @click="markAttendance(student, 'absent')"
-                                        :class="student.status === 'absent' ? 'bg-red-600 text-white shadow-lg' : 'bg-gray-100 text-gray-700 hover:bg-red-50 hover:text-red-700'"
+                                        :class="student.attendance_status === 'absent' ? 'bg-red-600 text-white shadow-lg' : 'bg-gray-100 text-gray-700 hover:bg-red-50 hover:text-red-700'"
                                         class="flex-1 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 border"
                                         :disabled="saving"
                                     >
@@ -417,3 +417,322 @@
         </div>
     </div>
 </div>
+
+<script>
+function attendanceManager() {
+    return {
+        activeTab: 'mark',
+        batches: [],
+        attendanceStudents: [],
+        selectedBatchId: null,
+        selectedDate: new Date().toISOString().split('T')[0],
+        attendanceData: {},
+        loading: false,
+        saving: false,
+        smsBalance: 0,
+        errorMessage: '',
+        monthlyBatchId: null,
+        selectedMonth: new Date().getMonth() + 1,
+        selectedYear: new Date().getFullYear(),
+        monthlyData: {},
+
+        async init() {
+            console.log('Attendance Manager initialized');
+            await this.loadBatches();
+            await this.loadSMSBalance();
+        },
+
+        async loadBatches() {
+            try {
+                const response = await fetch('/api/batches');
+                const data = await response.json();
+                if (data.success) {
+                    this.batches = data.data;
+                    console.log('Loaded batches:', this.batches.length);
+                }
+            } catch (error) {
+                console.error('Failed to load batches:', error);
+                this.errorMessage = 'Failed to load batches';
+            }
+        },
+
+        async loadStudentsForAttendance() {
+            if (!this.selectedBatchId) {
+                this.attendanceStudents = [];
+                return;
+            }
+
+            this.loading = true;
+            this.errorMessage = '';
+            console.log('Loading students for batch:', this.selectedBatchId);
+            
+            try {
+                const response = await fetch(`/api/students?batch_id=${this.selectedBatchId}`);
+                const data = await response.json();
+                
+                console.log('Students API response:', data);
+                
+                if (data.success) {
+                    this.attendanceStudents = data.data.map(student => ({
+                        ...student,
+                        attendance_status: 'present',
+                        status: 'present'
+                    }));
+                    
+                    console.log('Loaded students:', this.attendanceStudents.length);
+                    
+                    // Load existing attendance for the selected date
+                    await this.loadExistingAttendance();
+                } else {
+                    this.errorMessage = data.error || 'Failed to load students';
+                    this.attendanceStudents = [];
+                }
+            } catch (error) {
+                console.error('Failed to load students:', error);
+                this.errorMessage = 'Failed to load students: ' + error.message;
+                this.attendanceStudents = [];
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async loadExistingAttendance() {
+            try {
+                const response = await fetch(`/api/attendance?batch_id=${this.selectedBatchId}&date=${this.selectedDate}`);
+                const data = await response.json();
+                
+                    if (data.success && data.data.length > 0) {
+                    // Map existing attendance to students
+                    data.data.forEach(record => {
+                        const student = this.attendanceStudents.find(s => s.id === record.student_id);
+                        if (student) {
+                            student.attendance_status = record.status;
+                            student.status = record.status;
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to load existing attendance:', error);
+            }
+        },
+
+        async saveAttendance() {
+            if (!this.selectedBatchId) {
+                this.errorMessage = 'Please select a batch first';
+                return;
+            }
+
+            this.saving = true;
+            this.errorMessage = '';
+            try {
+                const attendanceRecords = this.attendanceStudents.map(student => ({
+                    student_id: student.id,
+                    status: student.attendance_status,
+                    date: this.selectedDate
+                }));
+
+                const response = await fetch('/api/attendance', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        batch_id: this.selectedBatchId,
+                        date: this.selectedDate,
+                        attendance: attendanceRecords
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (typeof showToast === 'function') {
+                        showToast('Attendance saved successfully', 'success');
+                    }
+                } else {
+                    this.errorMessage = data.error || 'Failed to save attendance';
+                }
+            } catch (error) {
+                console.error('Failed to save attendance:', error);
+                this.errorMessage = 'Failed to save attendance: ' + error.message;
+            } finally {
+                this.saving = false;
+            }
+        },
+
+        async sendSMS() {
+            if (!this.selectedBatchId) {
+                this.errorMessage = 'Please select a batch first';
+                return;
+            }
+
+            const absentStudents = this.attendanceStudents.filter(s => s.attendance_status === 'absent');
+            
+            if (absentStudents.length === 0) {
+                this.errorMessage = 'No absent students to notify';
+                return;
+            }
+
+            if (!confirm(`Send SMS to ${absentStudents.length} absent student(s)?`)) {
+                return;
+            }
+
+            this.saving = true;
+            this.errorMessage = '';
+            try {
+                const response = await fetch('/api/attendance/send-sms', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        batch_id: this.selectedBatchId,
+                        date: this.selectedDate,
+                        student_ids: absentStudents.map(s => s.id)
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (typeof showToast === 'function') {
+                        showToast(`SMS sent to ${absentStudents.length} guardian(s)`, 'success');
+                    }
+                    await this.loadSMSBalance();
+                } else {
+                    this.errorMessage = data.error || 'Failed to send SMS';
+                }
+            } catch (error) {
+                console.error('Failed to send SMS:', error);
+                this.errorMessage = 'Failed to send SMS: ' + error.message;
+            } finally {
+                this.saving = false;
+            }
+        },
+
+        async loadSMSBalance() {
+            try {
+                const response = await fetch('/api/sms/balance');
+                const data = await response.json();
+                if (data.success) {
+                    this.smsBalance = data.data.balance || 0;
+                }
+            } catch (error) {
+                console.error('Failed to load SMS balance:', error);
+            }
+        },
+
+        async loadMonthlyAttendance() {
+            if (!this.monthlyBatchId) {
+                this.monthlyData = {};
+                return;
+            }
+
+            this.loading = true;
+            this.errorMessage = '';
+            console.log('Loading monthly attendance:', this.monthlyBatchId, this.selectedMonth, this.selectedYear);
+            
+            try {
+                const response = await fetch(`/api/attendance/monthly?batch_id=${this.monthlyBatchId}&year=${this.selectedYear}&month=${this.selectedMonth}`);
+                const data = await response.json();
+                
+                console.log('Monthly attendance response:', data);
+                
+                if (data.success) {
+                    this.monthlyData = data.data;
+                } else {
+                    this.errorMessage = data.error || 'Failed to load monthly attendance';
+                    this.monthlyData = {};
+                }
+            } catch (error) {
+                console.error('Failed to load monthly sheet:', error);
+                this.errorMessage = 'Failed to load monthly sheet: ' + error.message;
+                this.monthlyData = {};
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        getAttendanceClass(status) {
+            switch (status) {
+                case 'present':
+                    return 'bg-green-100 text-green-800';
+                case 'absent':
+                    return 'bg-red-100 text-red-800';
+                case 'late':
+                    return 'bg-yellow-100 text-yellow-800';
+                case 'excused':
+                    return 'bg-blue-100 text-blue-800';
+                default:
+                    return 'bg-gray-100 text-gray-400';
+            }
+        },
+
+        getAttendanceSymbol(status) {
+            switch (status) {
+                case 'present':
+                    return 'P';
+                case 'absent':
+                    return 'A';
+                case 'late':
+                    return 'L';
+                case 'excused':
+                    return 'E';
+                default:
+                    return '-';
+            }
+        },
+
+        markAttendance(student, status) {
+            console.log('markAttendance called for', student.id, status);
+            const index = this.attendanceStudents.findIndex(s => s.id === student.id);
+            if (index !== -1) {
+                this.attendanceStudents[index].attendance_status = status;
+                this.attendanceStudents[index].status = status;
+            } else {
+                // fallback: modify directly
+                student.attendance_status = status;
+                student.status = status;
+            }
+        },
+
+        markAllPresent() {
+            this.attendanceStudents.forEach(student => {
+                student.attendance_status = 'present';
+                student.status = 'present';
+            });
+        },
+
+        markAllAbsent() {
+            this.attendanceStudents.forEach(student => {
+                student.attendance_status = 'absent';
+                student.status = 'absent';
+            });
+        },
+
+        getBangladeshDate() {
+            return new Date().toISOString().split('T')[0];
+        },
+
+        getMonthName(monthNum) {
+            const months = ['', 'January', 'February', 'March', 'April', 'May', 'June', 
+                          'July', 'August', 'September', 'October', 'November', 'December'];
+            return months[monthNum] || '';
+        },
+
+        getStudentInitial(student) {
+            const name = student.full_name || student.first_name || 'S';
+            return name.charAt(0).toUpperCase();
+        },
+
+        get absentCount() {
+            return this.attendanceStudents.filter(s => s.attendance_status === 'absent').length;
+        },
+
+        get presentCount() {
+            return this.attendanceStudents.filter(s => s.attendance_status === 'present').length;
+        },
+
+        get attendancePercentage() {
+            if (this.attendanceStudents.length === 0) return 0;
+            return Math.round((this.presentCount / this.attendanceStudents.length) * 100);
+        }
+    };
+}
+</script>

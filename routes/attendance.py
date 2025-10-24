@@ -81,6 +81,214 @@ def get_attendance():
     except Exception as e:
         return error_response(f'Failed to retrieve attendance: {str(e)}', 500)
 
+@attendance_bp.route('', methods=['POST'])
+@login_required
+@require_role(UserRole.TEACHER, UserRole.SUPER_USER, UserRole.JUNIOR_USTADH)
+def save_attendance():
+    """Save attendance records (supports both teacher and junior ustad)"""
+    try:
+        data = request.get_json()
+        batch_id = data.get('batch_id')
+        date_str = data.get('date')
+        attendance_records = data.get('attendance', [])
+        
+        if not batch_id or not date_str:
+            return error_response('Batch ID and date are required', 400)
+        
+        try:
+            attendance_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            return error_response('Invalid date format. Use YYYY-MM-DD', 400)
+        
+        current_user = get_current_user()
+        
+        # Verify batch exists
+        batch = Batch.query.get(batch_id)
+        if not batch:
+            return error_response('Batch not found', 404)
+        
+        saved_count = 0
+        
+        for record in attendance_records:
+            student_id = record.get('student_id')
+            status = record.get('status', 'present')
+            
+            if not student_id:
+                continue
+            
+            # Verify student exists
+            student = User.query.get(student_id)
+            if not student or student.role != UserRole.STUDENT:
+                continue
+            
+            # Check if attendance already exists
+            existing = Attendance.query.filter_by(
+                user_id=student_id,
+                batch_id=batch_id,
+                date=attendance_date
+            ).first()
+            
+            if existing:
+                # Update existing record
+                existing.status = AttendanceStatus(status)
+                existing.marked_by = current_user.id
+                existing.updated_at = datetime.utcnow()
+            else:
+                # Create new record
+                new_attendance = Attendance(
+                    user_id=student_id,
+                    batch_id=batch_id,
+                    date=attendance_date,
+                    status=AttendanceStatus(status),
+                    marked_by=current_user.id,
+                    created_at=datetime.utcnow()
+                )
+                db.session.add(new_attendance)
+            
+            saved_count += 1
+        
+        db.session.commit()
+        
+        return success_response(f'Attendance saved for {saved_count} student(s)', {
+            'saved_count': saved_count,
+            'batch_id': batch_id,
+            'date': date_str
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'Failed to save attendance: {str(e)}', 500)
+
+@attendance_bp.route('/send-sms', methods=['POST'])
+@login_required
+@require_role(UserRole.TEACHER, UserRole.SUPER_USER, UserRole.JUNIOR_USTADH)
+def send_attendance_sms():
+    """Send SMS notifications for attendance (supports both teacher and junior ustad)"""
+    try:
+        data = request.get_json()
+        batch_id = data.get('batch_id')
+        date_str = data.get('date')
+        student_ids = data.get('student_ids', [])
+        
+        if not batch_id or not date_str:
+            return error_response('Batch ID and date are required', 400)
+        
+        if not student_ids:
+            return error_response('No students to send SMS to', 400)
+        
+        try:
+            attendance_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            return error_response('Invalid date format. Use YYYY-MM-DD', 400)
+        
+        current_user = get_current_user()
+        
+        # Check SMS balance
+        if not hasattr(current_user, 'sms_count') or current_user.sms_count is None or current_user.sms_count <= 0:
+            return error_response('Insufficient SMS balance. Please contact admin.', 400)
+        
+        # Get batch
+        batch = Batch.query.get(batch_id)
+        if not batch:
+            return error_response('Batch not found', 404)
+        
+        # Import SMS utilities
+        from routes.sms import send_sms_via_api
+        from models import SmsLog, SmsStatus
+        from flask import session
+        
+        sms_sent_count = 0
+        sms_failed_count = 0
+        
+        # Get custom templates from session
+        custom_templates = session.get('custom_templates', {})
+        
+        for student_id in student_ids:
+            # Get student
+            student = User.query.get(student_id)
+            if not student or student.role != UserRole.STUDENT:
+                continue
+            
+            # Get attendance status for this student
+            attendance = Attendance.query.filter_by(
+                user_id=student_id,
+                batch_id=batch_id,
+                date=attendance_date
+            ).first()
+            
+            if not attendance:
+                continue
+            
+            status = attendance.status.value
+            
+            # Select template based on status
+            if status == 'present':
+                template = custom_templates.get('attendance_present', 
+                    'Dear Parent, {student_name} was PRESENT today in {batch_name} on {date}. Keep up the good work!')
+            else:
+                template = custom_templates.get('attendance_absent', 
+                    'Dear Parent, {student_name} was ABSENT today in {batch_name} on {date}. Please ensure regular attendance.')
+            
+            # Format message
+            message = template.format(
+                student_name=student.full_name or f"{student.first_name} {student.last_name}",
+                batch_name=batch.name,
+                date=attendance_date.strftime('%d/%m/%Y')
+            )
+            
+            # Collect phone numbers
+            phone_numbers = []
+            if hasattr(student, 'guardian_phone') and student.guardian_phone:
+                phone_numbers.append(student.guardian_phone)
+            if student.phone:
+                phone_numbers.append(student.phone)
+            
+            # Remove duplicates
+            phone_numbers = list(set(phone_numbers))
+            
+            # Send to each number
+            for phone in phone_numbers:
+                if not phone or current_user.sms_count <= 0:
+                    continue
+                
+                try:
+                    result = send_sms_via_api(phone, message)
+                    
+                    # Log SMS
+                    sms_log = SmsLog(
+                        user_id=student.id,
+                        phone_number=phone,
+                        message=message,
+                        status=SmsStatus.SENT if result.get('success') else SmsStatus.FAILED,
+                        sent_by=current_user.id,
+                        api_response=result,
+                        cost=1,
+                        sent_at=datetime.utcnow() if result.get('success') else None
+                    )
+                    db.session.add(sms_log)
+                    
+                    if result.get('success'):
+                        current_user.sms_count -= 1
+                        sms_sent_count += 1
+                    else:
+                        sms_failed_count += 1
+                        
+                except Exception as sms_error:
+                    print(f"SMS send error: {sms_error}")
+                    sms_failed_count += 1
+        
+        db.session.commit()
+        
+        return success_response(f'SMS sent to {sms_sent_count} recipient(s)', {
+            'sent': sms_sent_count,
+            'failed': sms_failed_count,
+            'remaining_balance': current_user.sms_count
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'Failed to send SMS: {str(e)}', 500)
+
 @attendance_bp.route('/bulk', methods=['POST'])
 @login_required
 @require_role(UserRole.TEACHER, UserRole.SUPER_USER)
@@ -252,7 +460,7 @@ def bulk_mark_attendance():
 
 @attendance_bp.route('/bulk-absent-sms', methods=['POST'])
 @login_required
-@require_role(UserRole.TEACHER, UserRole.SUPER_USER)
+@require_role(UserRole.TEACHER, UserRole.SUPER_USER, UserRole.JUNIOR_USTADH)
 def bulk_mark_attendance_send_absent_sms():
     """Mark attendance and send SMS only to absent students"""
     try:

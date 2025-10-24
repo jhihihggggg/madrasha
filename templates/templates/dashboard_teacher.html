@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Teacher Dashboard - GS Student Nursing Center by Golam Sarowar Sir{% endblock %}
+{% block title %}উস্তাদ ড্যাশবোর্ড - মাদ্রাসা উম্মুল কুরা{% endblock %}
 
 {% block extra_head %}
 <script src="https://unpkg.com/htmx.org@1.9.6"></script>
@@ -21,13 +21,13 @@
         <!-- Sidebar Header -->
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center">
-                <div class="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
-                    <i class="fas fa-graduation-cap text-white text-lg"></i>
+                <div class="w-10 h-10 bg-gradient-to-r from-green-600 to-teal-600 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-mosque text-white text-lg"></i>
                 </div>
                 <div class="ml-3">
-                    <h2 class="text-lg font-semibold text-gray-900">Teacher Panel</h2>
-                    <p class="text-sm text-blue-600 font-semibold">Management Dashboard</p>
-                    <p class="text-xs text-gray-500">Welcome, {{ user.first_name }} {{ user.last_name }}!</p>
+                    <h2 class="text-lg font-semibold text-gray-900">উস্তাদ প্যানেল</h2>
+                    <p class="text-sm text-green-600 font-semibold">ব্যবস্থাপনা ড্যাশবোর্ড</p>
+                    <p class="text-xs text-gray-500">স্বাগতম, {{ user.first_name }} {{ user.last_name }}!</p>
                 </div>
             </div>
         </div>
@@ -174,9 +174,21 @@
                 {% include 'partials/document_management.html' %}
             </div>
 
-            <!-- AI Question Builder -->
-            <div x-show="activeSection === 'ai-question-builder'" x-transition>
-                {% include 'partials/ai_questions.html' %}
+            <!-- Accounting - আয়-ব্যয় হিসাব -->
+            <div x-show="activeSection === 'accounting'" x-transition>
+                {% include 'partials/accounting_management.html' %}
+            </div>
+
+            <!-- Junior Ustadh Management -->
+            <div x-show="activeSection === 'junior-ustadh'" x-transition>
+                <div class="p-6">
+                    <h2 class="text-2xl font-bold mb-4">জুনিয়র উস্তাদ ব্যবস্থাপনা</h2>
+                    <p class="text-gray-600 mb-4">জুনিয়র উস্তাদ পরিচালনা করতে নিচের লিংকে ক্লিক করুন</p>
+                    <a href="/junior-ustad-management" class="btn-primary inline-block">
+                        <i class="fas fa-user-plus mr-2"></i>
+                        জুনিয়র উস্তাদ ব্যবস্থাপনা পেজে যান
+                    </a>
+                </div>
             </div>
 
             <!-- Archive Management -->
@@ -235,9 +247,10 @@ function teacherDashboard() {
             { id: 'monthly-exams', title: 'Monthly Exams', icon: 'fas fa-clipboard-list' },
             { id: 'attendance', title: 'Attendance', icon: 'fas fa-calendar-check' },
             { id: 'fees', title: 'Fees', icon: 'fas fa-money-bill' },
+            { id: 'accounting', title: 'আয়-ব্যয় হিসাব', icon: 'fas fa-calculator' },
+            { id: 'junior-ustadh', title: 'জুনিয়র উস্তাদ', icon: 'fas fa-user-tie' },
             { id: 'sms', title: 'SMS', icon: 'fas fa-sms' },
             { id: 'online-resources', title: 'Online Resources', icon: 'fas fa-book' },
-            { id: 'ai-question-builder', title: 'AI Questions', icon: 'fas fa-brain' },
             { id: 'archive', title: 'Archive', icon: 'fas fa-archive' }
         ],
 

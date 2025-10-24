@@ -193,6 +193,8 @@ def login():
                 return redirect(url_for('templates.super_dashboard'))
             elif user.role == UserRole.TEACHER:
                 return redirect(url_for('templates.teacher_dashboard'))
+            elif user.role == UserRole.JUNIOR_USTADH:
+                return redirect(url_for('templates.junior_ustadh_dashboard'))
             elif user.role == UserRole.STUDENT:
                 return redirect(url_for('templates.student_dashboard'))
             else:

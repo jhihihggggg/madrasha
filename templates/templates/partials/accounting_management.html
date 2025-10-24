@@ -1,0 +1,398 @@
+<div x-data="accountingManagement()" class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-900">আয়-ব্যয় হিসাব-নিকাশ</h2>
+            <p class="text-sm text-gray-600 mt-1">মাদ্রাসার আর্থিক ব্যবস্থাপনা</p>
+        </div>
+        <button @click="showAddExpenseModal = true" class="btn-primary">
+            <i class="fas fa-plus mr-2"></i>
+            নতুন খরচ যোগ করুন
+        </button>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="card bg-gradient-to-br from-green-50 to-green-100 border-l-4 border-green-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-semibold text-green-700">মোট আয় (আদায়কৃত ফি)</p>
+                    <p class="text-3xl font-bold text-green-900 mt-2">৳<span x-text="summary.income?.total?.toFixed(0) || 0"></span></p>
+                </div>
+                <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center">
+                    <i class="fas fa-arrow-up text-white text-2xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-gradient-to-br from-red-50 to-red-100 border-l-4 border-red-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-semibold text-red-700">মোট ব্যয়</p>
+                    <p class="text-3xl font-bold text-red-900 mt-2">৳<span x-text="summary.expenses?.total?.toFixed(0) || 0"></span></p>
+                </div>
+                <div class="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center">
+                    <i class="fas fa-arrow-down text-white text-2xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-l-4" :class="summary.balance >= 0 ? 'bg-gradient-to-br from-blue-50 to-blue-100 border-blue-500' : 'bg-gradient-to-br from-orange-50 to-orange-100 border-orange-500'">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-semibold" :class="summary.balance >= 0 ? 'text-blue-700' : 'text-orange-700'">নিট ব্যালেন্স</p>
+                    <p class="text-3xl font-bold mt-2" :class="summary.balance >= 0 ? 'text-blue-900' : 'text-orange-900'">৳<span x-text="summary.balance?.toFixed(0) || 0"></span></p>
+                </div>
+                <div class="w-16 h-16 rounded-full flex items-center justify-center" :class="summary.balance >= 0 ? 'bg-blue-500' : 'bg-orange-500'">
+                    <i class="fas fa-wallet text-white text-2xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">বছর</label>
+                <select x-model="filters.year" @change="loadSummary(); loadExpenses();" class="form-input">
+                    <option value="2024">২০২৪</option>
+                    <option value="2025" selected>২০২৫</option>
+                    <option value="2026">২০২৬</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">মাস</label>
+                <select x-model="filters.month" @change="loadSummary(); loadExpenses();" class="form-input">
+                    <option value="">সকল মাস</option>
+                    <option value="1">জানুয়ারি</option>
+                    <option value="2">ফেব্রুয়ারি</option>
+                    <option value="3">মার্চ</option>
+                    <option value="4">এপ্রিল</option>
+                    <option value="5">মে</option>
+                    <option value="6">জুন</option>
+                    <option value="7">জুলাই</option>
+                    <option value="8">আগস্ট</option>
+                    <option value="9">সেপ্টেম্বর</option>
+                    <option value="10">অক্টোবর</option>
+                    <option value="11">নভেম্বর</option>
+                    <option value="12">ডিসেম্বর</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">খরচের ধরন</label>
+                <select x-model="filters.category" @change="loadExpenses()" class="form-input">
+                    <option value="">সকল ধরন</option>
+                    <template x-for="cat in categories" :key="cat.value">
+                        <option :value="cat.value" x-text="cat.label"></option>
+                    </template>
+                </select>
+            </div>
+            <div class="flex items-end">
+                <button @click="exportReport()" class="btn-secondary w-full">
+                    <i class="fas fa-download mr-2"></i>
+                    রিপোর্ট ডাউনলোড
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expense Breakdown by Category -->
+    <div class="card mb-6">
+        <h3 class="text-lg font-bold text-gray-900 mb-4">ধরন অনুযায়ী ব্যয়</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <template x-for="(amount, category) in summary.expenses?.by_category || {}" :key="category">
+                <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <p class="text-xs text-gray-600 uppercase" x-text="getCategoryLabel(category)"></p>
+                    <p class="text-xl font-bold text-gray-900 mt-1">৳<span x-text="amount.toFixed(0)"></span></p>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <!-- Expenses List -->
+    <div class="card">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-gray-900">খরচের তালিকা</h3>
+            <span class="text-sm text-gray-600">মোট: <span x-text="expenses.length"></span>টি</span>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">তারিখ</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ধরন</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">বিবরণ</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">প্রাপক</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">টাকা</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">পদক্ষেপ</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <template x-for="expense in expenses" :key="expense.id">
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="formatDate(expense.date)"></td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800" x-text="getCategoryLabel(expense.category)"></span>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-900" x-text="expense.description"></td>
+                            <td class="px-6 py-4 text-sm text-gray-600" x-text="expense.recipient || '-'"></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-gray-900">৳<span x-text="expense.amount.toFixed(0)"></span></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
+                                <button @click="editExpense(expense)" class="text-blue-600 hover:text-blue-900 mr-3">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button @click="deleteExpense(expense.id)" class="text-red-600 hover:text-red-900">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </template>
+                    <tr x-show="expenses.length === 0">
+                        <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                            <i class="fas fa-inbox text-4xl mb-2"></i>
+                            <p>কোনো খরচ পাওয়া যায়নি</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Add/Edit Expense Modal -->
+    <div x-show="showAddExpenseModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="showAddExpenseModal = false">
+        <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl font-bold text-gray-900 mb-4" x-text="editingExpense ? 'খরচ সম্পাদনা' : 'নতুন খরচ যোগ করুন'"></h3>
+            
+            <form @submit.prevent="saveExpense()" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">খরচের ধরন *</label>
+                        <select x-model="expenseForm.category" required class="form-input">
+                            <option value="">নির্বাচন করুন</option>
+                            <template x-for="cat in categories" :key="cat.value">
+                                <option :value="cat.value" x-text="cat.label"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">তারিখ *</label>
+                        <input type="date" x-model="expenseForm.date" required class="form-input">
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">বিবরণ *</label>
+                    <input type="text" x-model="expenseForm.description" required class="form-input" placeholder="খরচের বিবরণ লিখুন">
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">টাকার পরিমাণ *</label>
+                        <input type="number" x-model="expenseForm.amount" required min="0" step="0.01" class="form-input" placeholder="0.00">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">প্রাপক</label>
+                        <input type="text" x-model="expenseForm.recipient" class="form-input" placeholder="যাকে দেওয়া হয়েছে">
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">পেমেন্ট পদ্ধতি</label>
+                    <select x-model="expenseForm.payment_method" class="form-input">
+                        <option value="Cash">নগদ</option>
+                        <option value="Bank Transfer">ব্যাংক ট্রান্সফার</option>
+                        <option value="Mobile Banking">মোবাইল ব্যাংকিং</option>
+                        <option value="Cheque">চেক</option>
+                        <option value="Online Payment">অনলাইন পেমেন্ট</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">মন্তব্য</label>
+                    <textarea x-model="expenseForm.notes" rows="3" class="form-input" placeholder="অতিরিক্ত তথ্য"></textarea>
+                </div>
+                
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" @click="showAddExpenseModal = false; resetForm();" class="btn-secondary">বাতিল</button>
+                    <button type="submit" class="btn-primary">সংরক্ষণ করুন</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function accountingManagement() {
+    return {
+        summary: {},
+        expenses: [],
+        categories: [],
+        filters: {
+            year: 2025,
+            month: '',
+            category: ''
+        },
+        showAddExpenseModal: false,
+        editingExpense: null,
+        expenseForm: {
+            category: '',
+            description: '',
+            amount: '',
+            date: new Date().toISOString().split('T')[0],
+            recipient: '',
+            payment_method: 'Cash',
+            notes: ''
+        },
+        
+        init() {
+            this.loadCategories();
+            this.loadSummary();
+            this.loadExpenses();
+        },
+        
+        async loadCategories() {
+            try {
+                const response = await fetch('/api/accounting/categories');
+                const data = await response.json();
+                if (data.success) {
+                    this.categories = data.data.categories;
+                }
+            } catch (error) {
+                console.error('Failed to load categories:', error);
+            }
+        },
+        
+        async loadSummary() {
+            try {
+                let url = `/api/accounting/summary?year=${this.filters.year}`;
+                if (this.filters.month) {
+                    url += `&month=${this.filters.month}`;
+                }
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                if (data.success) {
+                    this.summary = data.data;
+                }
+            } catch (error) {
+                console.error('Failed to load summary:', error);
+            }
+        },
+        
+        async loadExpenses() {
+            try {
+                let url = `/api/accounting/expenses?year=${this.filters.year}`;
+                if (this.filters.month) {
+                    url += `&month=${this.filters.month}`;
+                }
+                if (this.filters.category) {
+                    url += `&category=${this.filters.category}`;
+                }
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                if (data.success) {
+                    this.expenses = data.data.expenses;
+                }
+            } catch (error) {
+                console.error('Failed to load expenses:', error);
+            }
+        },
+        
+        async saveExpense() {
+            try {
+                const url = this.editingExpense 
+                    ? `/api/accounting/expenses/${this.editingExpense.id}`
+                    : '/api/accounting/expenses';
+                    
+                const method = this.editingExpense ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(this.expenseForm)
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    this.showAddExpenseModal = false;
+                    this.resetForm();
+                    this.loadSummary();
+                    this.loadExpenses();
+                } else {
+                    showToast(data.error, 'error');
+                }
+            } catch (error) {
+                console.error('Failed to save expense:', error);
+                showToast('খরচ সংরক্ষণ ব্যর্থ হয়েছে', 'error');
+            }
+        },
+        
+        editExpense(expense) {
+            this.editingExpense = expense;
+            this.expenseForm = {
+                category: expense.category,
+                description: expense.description,
+                amount: expense.amount,
+                date: expense.date,
+                recipient: expense.recipient || '',
+                payment_method: expense.payment_method || 'Cash',
+                notes: expense.notes || ''
+            };
+            this.showAddExpenseModal = true;
+        },
+        
+        async deleteExpense(id) {
+            if (!confirm('এই খরচটি মুছে ফেলতে চান?')) return;
+            
+            try {
+                const response = await fetch(`/api/accounting/expenses/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    showToast('খরচ মুছে ফেলা হয়েছে', 'success');
+                    this.loadSummary();
+                    this.loadExpenses();
+                } else {
+                    showToast(data.error, 'error');
+                }
+            } catch (error) {
+                console.error('Failed to delete expense:', error);
+                showToast('খরচ মুছে ফেলা ব্যর্থ হয়েছে', 'error');
+            }
+        },
+        
+        resetForm() {
+            this.editingExpense = null;
+            this.expenseForm = {
+                category: '',
+                description: '',
+                amount: '',
+                date: new Date().toISOString().split('T')[0],
+                recipient: '',
+                payment_method: 'Cash',
+                notes: ''
+            };
+        },
+        
+        getCategoryLabel(value) {
+            const cat = this.categories.find(c => c.value === value);
+            return cat ? cat.label : value;
+        },
+        
+        formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('bn-BD');
+        },
+        
+        exportReport() {
+            showToast('রিপোর্ট ডাউনলোড ফিচার শীঘ্রই আসছে', 'info');
+        }
+    }
+}
+</script>

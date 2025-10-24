@@ -1,0 +1,336 @@
+{% extends "base.html" %}
+
+{% block title %}জুনিয়র উস্তাদ ব্যবস্থাপনা - মাদ্রাসা উম্মুল কুরা{% endblock %}
+
+{% block content %}
+<!-- Back to Dashboard Button - Prominent -->
+<div class="bg-white border-b border-gray-200 mb-4">
+    <div class="container mx-auto px-4 py-3">
+        <a href="/" class="inline-flex items-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md font-semibold text-lg">
+            <i class="fas fa-arrow-left text-xl"></i>
+            <span>ড্যাশবোর্ডে ফিরে যান</span>
+        </a>
+    </div>
+</div>
+
+<div id="juniorUstadApp" class="container mx-auto px-4 py-6">
+
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                <i class="fas fa-user-plus text-green-600"></i>
+                জুনিয়র উস্তাদ ব্যবস্থাপনা
+            </h1>
+            <p class="text-gray-600 mt-2">সহকারী উস্তাদদের অ্যাকাউন্ট তৈরি ও পরিচালনা করুন</p>
+        </div>
+        <button onclick="app.showModal()" class="btn-primary">
+            <i class="fas fa-plus mr-2"></i>
+            নতুন জুনিয়র উস্তাদ যোগ করুন
+        </button>
+    </div>
+
+    <!-- Info Card -->
+    <div class="card mb-6 bg-gradient-to-r from-blue-50 to-blue-100 border-l-4 border-blue-500">
+        <div class="flex items-start gap-3">
+            <i class="fas fa-info-circle text-blue-600 text-xl mt-1"></i>
+            <div>
+                <h3 class="font-bold text-blue-900 mb-1">জুনিয়র উস্তাদের অনুমতি</h3>
+                <ul class="text-sm text-blue-800 space-y-1">
+                    <li><i class="fas fa-check mr-2"></i>উপস্থিতি নিতে পারবেন</li>
+                    <li><i class="fas fa-check mr-2"></i>অনলাইন রিসোর্স দেখতে পারবেন (শুধু পড়া যাবে)</li>
+                    <li><i class="fas fa-times mr-2"></i>ফি, অ্যাকাউন্টিং, পরীক্ষা সম্পাদনা করতে পারবেন না</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div class="card bg-gradient-to-br from-green-50 to-green-100 border-l-4 border-green-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-semibold text-green-700">মোট জুনিয়র উস্তাদ</p>
+                    <p class="text-3xl font-bold text-green-900 mt-2" id="totalCount">0</p>
+                </div>
+                <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center">
+                    <i class="fas fa-users text-white text-2xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-gradient-to-br from-blue-50 to-blue-100 border-l-4 border-blue-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-semibold text-blue-700">সক্রিয়</p>
+                    <p class="text-3xl font-bold text-blue-900 mt-2" id="activeCount">0</p>
+                </div>
+                <div class="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center">
+                    <i class="fas fa-check-circle text-white text-2xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-gradient-to-br from-gray-50 to-gray-100 border-l-4 border-gray-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-semibold text-gray-700">নিষ্ক্রিয়</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2" id="inactiveCount">0</p>
+                </div>
+                <div class="w-16 h-16 bg-gray-500 rounded-full flex items-center justify-center">
+                    <i class="fas fa-ban text-white text-2xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Junior Ustads List -->
+    <div class="card">
+        <h2 class="text-xl font-bold text-gray-900 mb-4">জুনিয়র উস্তাদের তালিকা</h2>
+        
+        <div class="overflow-x-auto" id="tableContainer">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">নাম</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ফোন</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ইমেইল</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">স্ট্যাটাস</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">শেষ লগইন</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">পদক্ষেপ</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200" id="juniorUstadsList">
+                    <tr>
+                        <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                            <i class="fas fa-spinner fa-spin text-4xl mb-2"></i>
+                            <p>লোড হচ্ছে...</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="addModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display:none;">
+        <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl font-bold text-gray-900 mb-4">নতুন জুনিয়র উস্তাদ যোগ করুন</h3>
+            
+            <form id="juniorUstadForm" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">প্রথম নাম *</label>
+                        <input type="text" name="first_name" required class="form-input w-full border rounded px-3 py-2" placeholder="প্রথম নাম">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">শেষ নাম *</label>
+                        <input type="text" name="last_name" required class="form-input w-full border rounded px-3 py-2" placeholder="শেষ নাম">
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">ফোন নম্বর *</label>
+                        <input type="tel" name="phone" required class="form-input w-full border rounded px-3 py-2" placeholder="01XXXXXXXXX">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">ইমেইল</label>
+                        <input type="email" name="email" class="form-input w-full border rounded px-3 py-2" placeholder="example@email.com">
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">পাসওয়ার্ড *</label>
+                    <input type="password" name="password" required class="form-input w-full border rounded px-3 py-2" placeholder="পাসওয়ার্ড লিখুন">
+                </div>
+                
+                <div id="formMessage" class="hidden p-3 rounded"></div>
+                
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" onclick="app.hideModal()" class="btn-secondary">বাতিল</button>
+                    <button type="submit" class="btn-primary">সংরক্ষণ করুন</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Pure vanilla JavaScript - no Alpine.js
+const app = {
+    juniorUstads: [],
+    
+    init() {
+        this.loadJuniorUstads();
+        this.setupFormHandler();
+    },
+        
+    async loadJuniorUstads() {
+        try {
+            const response = await fetch('/api/junior-ustad/');
+            const data = await response.json();
+            
+            if (data.success) {
+                this.juniorUstads = data.data.junior_ustads;
+                this.renderList();
+                this.updateStats();
+            } else {
+                alert(data.error);
+            }
+        } catch (error) {
+            console.error('Load error:', error);
+            alert('তথ্য লোড করতে ব্যর্থ');
+        }
+    },
+    
+    renderList() {
+        const tbody = document.getElementById('juniorUstadsList');
+        
+        if (this.juniorUstads.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                        <i class="fas fa-users text-4xl mb-2"></i>
+                        <p>কোনো জুনিয়র উস্তাদ পাওয়া যায়নি</p>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        tbody.innerHTML = this.juniorUstads.map(ju => `
+            <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex items-center">
+                        <div class="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold">
+                            <span>${ju.name.charAt(0)}</span>
+                        </div>
+                        <div class="ml-3">
+                            <div class="text-sm font-medium text-gray-900">${ju.name}</div>
+                        </div>
+                    </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${ju.phone}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${ju.email || '-'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-center">
+                    <span class="px-3 py-1 text-xs font-bold rounded-full ${ju.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                        ${ju.is_active ? 'সক্রিয়' : 'নিষ্ক্রিয়'}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-center">
+                    ${ju.last_login ? new Date(ju.last_login).toLocaleDateString('bn-BD') : 'কখনও নয়'}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                    <button onclick="app.deleteJuniorUstad(${ju.id})" class="text-red-600 hover:text-red-900" title="মুছে ফেলুন">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    },
+    
+    updateStats() {
+        document.getElementById('totalCount').textContent = this.juniorUstads.length;
+        document.getElementById('activeCount').textContent = this.juniorUstads.filter(j => j.is_active).length;
+        document.getElementById('inactiveCount').textContent = this.juniorUstads.filter(j => !j.is_active).length;
+    },
+        
+    setupFormHandler() {
+        const form = document.getElementById('juniorUstadForm');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                first_name: e.target.first_name.value,
+                last_name: e.target.last_name.value,
+                phone: e.target.phone.value,
+                email: e.target.email.value,
+                password: e.target.password.value
+            };
+            
+            const msgDiv = document.getElementById('formMessage');
+            msgDiv.className = 'p-3 rounded text-blue-600 bg-blue-100';
+            msgDiv.textContent = 'সংরক্ষণ হচ্ছে...';
+            msgDiv.classList.remove('hidden');
+            
+            try {
+                const response = await fetch('/api/junior-ustad/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    msgDiv.className = 'p-3 rounded text-green-600 bg-green-100';
+                    msgDiv.innerHTML = `<i class="fas fa-check-circle mr-2"></i>${data.message}`;
+                    
+                    form.reset();
+                    setTimeout(() => {
+                        this.hideModal();
+                        this.loadJuniorUstads();
+                    }, 1500);
+                } else {
+                    msgDiv.className = 'p-3 rounded text-red-600 bg-red-100';
+                    msgDiv.innerHTML = `<i class="fas fa-times-circle mr-2"></i>${data.error}`;
+                }
+            } catch (error) {
+                msgDiv.className = 'p-3 rounded text-red-600 bg-red-100';
+                msgDiv.innerHTML = `<i class="fas fa-exclamation-triangle mr-2"></i>Error: ${error.message}`;
+            }
+        });
+    },
+    
+    showModal() {
+        document.getElementById('addModal').style.display = 'flex';
+        document.getElementById('formMessage').classList.add('hidden');
+    },
+    
+    hideModal() {
+        document.getElementById('addModal').style.display = 'none';
+        document.getElementById('juniorUstadForm').reset();
+        document.getElementById('formMessage').classList.add('hidden');
+    },
+    
+    async deleteJuniorUstad(id) {
+        if (!confirm('এই জুনিয়র উস্তাদ অ্যাকাউন্ট মুছে ফেলতে চান?')) return;
+        
+        try {
+            const response = await fetch(`/api/junior-ustad/${id}`, {
+                method: 'DELETE'
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                if (typeof showToast === 'function') {
+                    showToast(data.message, 'success');
+                }
+                this.loadJuniorUstads();
+            } else {
+                if (typeof showToast === 'function') {
+                    showToast(data.error || 'মুছে ফেলা ব্যর্থ', 'error');
+                } else {
+                    alert(data.error);
+                }
+            }
+        } catch (error) {
+            console.error('Delete error:', error);
+            if (typeof showToast === 'function') {
+                showToast('মুছে ফেলা ব্যর্থ', 'error');
+            } else {
+                alert('মুছে ফেলা ব্যর্থ');
+            }
+        }
+    }
+};
+
+// Initialize app when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('Initializing Junior Ustad Management...');
+    app.init();
+});
+</script>
+{% endblock %}

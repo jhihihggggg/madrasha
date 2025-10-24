@@ -43,13 +43,14 @@ def create_app(config_name=None):
     from routes.sms_templates import sms_templates_bp
     from routes.attendance import attendance_bp
     from routes.results import results_bp
-    from routes.ai import ai_bp
+    from routes.accounting import accounting_bp  # Madrasha accounting system
     from routes.dashboard import dashboard_bp
     from routes.settings import settings_bp
     from routes.students import students_bp
     from routes.monthly_exams import monthly_exams_bp
     from routes.debug import debug_bp
     from routes.documents import documents_bp
+    from routes.junior_ustad import junior_ustad_bp  # Junior ustad management
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(users_bp, url_prefix='/api/users')
@@ -62,12 +63,13 @@ def create_app(config_name=None):
     app.register_blueprint(sms_templates_bp, url_prefix='/api/sms/templates')
     app.register_blueprint(attendance_bp, url_prefix='/api/attendance')
     app.register_blueprint(results_bp, url_prefix='/api/results')
-    app.register_blueprint(ai_bp, url_prefix='/api/ai')
+    app.register_blueprint(accounting_bp, url_prefix='/api/accounting')
     app.register_blueprint(dashboard_bp, url_prefix='/api/dashboard')
     app.register_blueprint(settings_bp, url_prefix='/api/settings')
     app.register_blueprint(monthly_exams_bp, url_prefix='/api/monthly-exams')
     app.register_blueprint(debug_bp, url_prefix='/api/debug')
     app.register_blueprint(documents_bp, url_prefix='/api/documents')
+    app.register_blueprint(junior_ustad_bp, url_prefix='/api/junior-ustad')
     
     # Register template routes
     from routes.templates import templates_bp
@@ -166,7 +168,7 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('DEBUG', 'False').lower() == 'true'
     
-    print(f"Starting SmartGardenHub on port {port}")
+    print(f"Starting Madrasha Ummul Qura Management System on port {port}")
     print(f"Debug mode: {debug}")
     print(f"Environment: {os.environ.get('FLASK_ENV', 'development')}")
     

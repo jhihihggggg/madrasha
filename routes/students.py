@@ -36,7 +36,7 @@ def validate_phone(phone):
 
 @students_bp.route('', methods=['GET'])
 @login_required
-@require_role(UserRole.TEACHER, UserRole.SUPER_USER)
+@require_role(UserRole.TEACHER, UserRole.SUPER_USER, UserRole.JUNIOR_USTADH)
 def get_students():
     """Get all students with their batch information (excludes archived)"""
     try:

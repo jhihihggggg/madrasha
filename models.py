@@ -1,5 +1,5 @@
 """
-Database Models for SmartGardenHub
+Database Models for Madrasha Ummul Qura Management System
 MySQL/SQLAlchemy implementation of the complete schema
 """
 from flask_sqlalchemy import SQLAlchemy
@@ -14,6 +14,7 @@ db = SQLAlchemy()
 class UserRole(Enum):
     STUDENT = "student"
     TEACHER = "teacher"
+    JUNIOR_USTADH = "junior_ustadh"  # Junior teacher with limited permissions
     SUPER_USER = "super_user"
 
 class ExamType(Enum):
@@ -304,6 +305,28 @@ class Fee(db.Model):
     
     def __repr__(self):
         return f'<Fee {self.user_id} - {self.amount}>'
+
+class Expense(db.Model):
+    """Expense tracking model for Madrasha accounting"""
+    __tablename__ = 'expenses'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    category = db.Column(db.String(100), nullable=False)  # salary, books, instruments, etc.
+    description = db.Column(db.String(500), nullable=False)
+    amount = db.Column(Numeric(10, 2), nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    recipient = db.Column(db.String(200), nullable=True)  # Who received the payment
+    payment_method = db.Column(db.String(50), nullable=True)  # Cash, Bank Transfer, etc.
+    notes = db.Column(db.Text, nullable=True)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    created_by_user = db.relationship('User', foreign_keys=[created_by])
+    
+    def __repr__(self):
+        return f'<Expense {self.category} - {self.amount}>'
 
 class SmsLog(db.Model):
     """SMS logging model"""
