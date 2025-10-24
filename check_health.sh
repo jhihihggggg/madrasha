@@ -4,7 +4,7 @@
 # Add to crontab: */5 * * * * /var/www/madrasha/check_health.sh >> /var/www/madrasha/logs/health_check.log 2>&1
 
 TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S")
-APP_URL="http://localhost:5000/health"
+APP_URL="http://localhost:8000/health"
 SERVICE_NAME="madrasha"
 ALERT_EMAIL="admin@madrasaummulqura.com"  # Change this
 
