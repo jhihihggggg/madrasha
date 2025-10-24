@@ -6,8 +6,13 @@ Creates database file and default users
 import os
 import sys
 
-# Ensure we're using SQLite
-os.environ['DATABASE_URL'] = 'sqlite:///instance/madrasha.db'
+# Get the absolute path to the project directory
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+os.chdir(PROJECT_DIR)
+
+# Ensure we're using SQLite with ABSOLUTE path
+db_path = os.path.join(PROJECT_DIR, 'instance', 'madrasha.db')
+os.environ['DATABASE_URL'] = f'sqlite:///{db_path}'
 os.environ['FLASK_ENV'] = 'production'
 
 # Remove any MySQL environment variables
@@ -15,7 +20,8 @@ for key in ['MYSQL_HOST', 'MYSQL_USER', 'MYSQL_PASSWORD', 'MYSQL_DATABASE']:
     os.environ.pop(key, None)
 
 print("🗄️  Initializing SQLite database...")
-print(f"   Database: instance/madrasha.db")
+print(f"   Working directory: {os.getcwd()}")
+print(f"   Database path: {db_path}")
 
 from app import create_app
 from models import db, User, UserRole
