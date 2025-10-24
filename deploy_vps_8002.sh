@@ -52,9 +52,14 @@ echo "✅ Configuration file created with SQLite"
 
 echo ""
 echo "Step 4: Initializing SQLite database..."
-python3 create_default_users.py
-echo "✅ SQLite database initialized at instance/madrasha.db"
-ls -lh instance/madrasha.db
+python3 init_sqlite_vps.py
+if [ -f instance/madrasha.db ]; then
+    echo "✅ SQLite database created successfully"
+    ls -lh instance/madrasha.db
+else
+    echo "❌ Failed to create database"
+    exit 1
+fi
 
 deactivate
 
