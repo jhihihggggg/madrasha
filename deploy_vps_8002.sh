@@ -36,6 +36,11 @@ echo ""
 echo "Step 3: Creating SQLite database configuration..."
 mkdir -p instance logs static/uploads
 
+# Set permissions BEFORE creating .env and database
+chown -R www-data:www-data "$PROJECT_DIR"
+chmod 755 instance logs static
+chmod 775 instance  # Need write permissions for SQLite
+
 # Create .env file with SQLite
 cat > .env << 'EOF'
 FLASK_ENV=production
@@ -48,11 +53,13 @@ EOF
 # Generate SECRET_KEY
 SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_hex(32))")
 echo "SECRET_KEY=$SECRET_KEY" >> .env
+chown www-data:www-data .env
 echo "✅ Configuration file created with SQLite"
 
 echo ""
 echo "Step 4: Initializing SQLite database..."
-python3 init_sqlite_vps.py
+# Run as www-data user to ensure proper permissions
+sudo -u www-data venv/bin/python3 init_sqlite_vps.py
 if [ -f instance/madrasha.db ]; then
     echo "✅ SQLite database created successfully"
     ls -lh instance/madrasha.db
@@ -64,9 +71,8 @@ fi
 deactivate
 
 echo ""
-echo "Step 5: Setting file permissions..."
+echo "Step 5: Final permission check..."
 chown -R www-data:www-data "$PROJECT_DIR"
-chmod 755 instance logs static
 chmod 644 instance/madrasha.db
 chmod +x *.sh
 echo "✅ Permissions set"
