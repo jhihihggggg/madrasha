@@ -163,8 +163,10 @@ def create_app(config_name=None):
     
     return app
 
+# Create app instance for WSGI servers (Gunicorn, uWSGI, etc.)
+app = create_app()
+
 if __name__ == '__main__':
-    app = create_app()
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('DEBUG', 'False').lower() == 'true'
     
