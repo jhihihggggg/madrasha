@@ -5,7 +5,7 @@ import os
 import multiprocessing
 
 # Server socket
-bind = "127.0.0.1:8000"  # Bind to localhost (Nginx will proxy)
+bind = "127.0.0.1:8002"  # Bind to localhost (Nginx will proxy)
 backlog = 2048
 
 # Worker processes

@@ -19,20 +19,20 @@ else
     journalctl -u madrasha.service -n 30 --no-pager
 fi
 
-# 2. Check if port 8000 is listening
+# 2. Check if port 8002 is listening
 echo ""
-echo "2️⃣ Checking if port 8000 is listening..."
-if lsof -i :8000 > /dev/null 2>&1; then
-    echo "✅ Port 8000 is in use:"
-    lsof -i :8000
+echo "2️⃣ Checking if port 8002 is listening..."
+if lsof -i :8002 > /dev/null 2>&1; then
+    echo "✅ Port 8002 is in use:"
+    lsof -i :8002
 else
-    echo "❌ Port 8000 is NOT listening"
+    echo "❌ Port 8002 is NOT listening"
 fi
 
 # 3. Test localhost connection
 echo ""
-echo "3️⃣ Testing localhost:8000..."
-curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" http://localhost:8000/health || echo "❌ Cannot connect to localhost:8000"
+echo "3️⃣ Testing localhost:8002..."
+curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" http://localhost:8002/health || echo "❌ Cannot connect to localhost:8002"
 
 # 4. Check .env file
 echo ""
@@ -183,14 +183,14 @@ systemctl status madrasha.service --no-pager -l | head -20
 
 # Verify port
 echo ""
-echo "Port 8000 status:"
-lsof -i :8000 || echo "⚠️  Port 8000 not listening"
+echo "Port 8002 status:"
+lsof -i :8002 || echo "⚠️  Port 8002 not listening"
 
 # Test connection
 echo ""
-echo "Testing localhost:8000..."
+echo "Testing localhost:8002..."
 sleep 2
-curl -v http://localhost:8000/health 2>&1 | head -20
+curl -v http://localhost:8002/health 2>&1 | head -20
 
 echo ""
 echo "======================="
@@ -200,7 +200,7 @@ echo ""
 echo "If still getting 502 error:"
 echo "  1. Check logs: journalctl -u madrasha.service -f"
 echo "  2. Check Nginx logs: tail -f /var/log/nginx/madrasha_error.log"
-echo "  3. Test manually: curl -v http://localhost:8000/health"
+echo "  3. Test manually: curl -v http://localhost:8002/health"
 echo ""
 echo "To restart service:"
 echo "  systemctl restart madrasha.service"
